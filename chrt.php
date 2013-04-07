@@ -73,7 +73,7 @@ class chrt {
 	private $data_set_example = array(
 		'label' => 'string',
 		'type' => 'string',
-		'data' => array(
+		'points' => array(
 			1
 		)
 	);
@@ -172,7 +172,7 @@ class chrt {
 	 */
 	private function validate_data_sets($data_sets)
 	{
-		$data_set_points_default_size = count($data_sets[0]['data']);
+		$data_set_points_default_size = count($data_sets[0]['points']);
 
 		foreach ($data_sets as $index => $data_set) {
 			$data_set_name = 'Set [' .  $index . ']';
@@ -183,7 +183,7 @@ class chrt {
 			);
 			$this->validate_data_set_points_size(
 				$data_set_name,
-				$data_set['data'],
+				$data_set['points'],
 				$data_set_points_default_size
 			);
 		}
@@ -208,6 +208,14 @@ class chrt {
 				$default_type,
 				$data_set_name . '[' . $default_param . ']'
 			);
+
+			if (is_array($default_type))
+				foreach ($data_set[$default_param] as $key => $value)
+					$this->validate_type_matches(
+						$value,
+						$default_type[0],
+						$data_set_name . '[' . $default_param . ']' . '[' . $key . ']'
+					);
 		}
 	}
 
