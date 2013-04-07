@@ -6,27 +6,29 @@ class chrt {
 	 * Settings
 	 * @var array
 	 *		chart (array)
-	 *			height (int)
-	 *			width (int)
-	 *    		margin (int)
-	 *			padding (int)
+	 *			height (num)
+	 *			width (num)
+	 *    		margin (num)
+	 *			padding (num)
 	 *		legend (array)
-	 *			height (int)
+	 *			height (num)
 	 *		guide (array)
-	 *			count (int)
+	 *			count (num)
 	 *			color (string)
-	 *    		width (int)
-	 *		base_line (array)
+	 *    		width (num)
+	 *		baseline (array)
 	 *			color (string)
+	 *			auto (bool)
+	 *			value (num)
 	 *		point (array)
-	 *			size (int)
-	 *			stroke_width (int)
+	 *			size (num)
+	 *			stroke_width (num)
 	 *		line (array)
-	 *			width (int)
+	 *			width (num)
 	 *			handle_offset (double)
 	 *		label (array)
 	 *			font (string)
-	 *			size (int)
+	 *			size (num)
 	 *    		color (string)
 	 */
 	private $settings = array(
@@ -44,8 +46,10 @@ class chrt {
 			'color' => '#EEEEEE',
 			'width' => 1
 		),
-		'base_line' => array(
-			'color' => '#333333'
+		'baseline' => array(
+			'color' => '#333333',
+			'auto' => true,
+			'value' => 0
 		),
 		'point' => array(
 			'size' => 5,
@@ -118,7 +122,7 @@ class chrt {
 	 */
 	private function validate_and_update_settings($override, &$default, $default_name = '$this->settings')
 	{
-		$this->validate_type_matches($default_name, $default, $override);
+		$this->validate_type_matches($override, $default, $default_name);
 
 		if (is_array($default)) {
 			foreach ($override as $override_name => $override_value) {
@@ -142,17 +146,20 @@ class chrt {
 
 	/**
 	 * Validates that a provided param matches a default param
-	 * @param string Default param name
-	 * @param mixed Default param
 	 * @param mixed Provided prarm
+	 * @param mixed Default param
+	 * @param string Default param name
 	 * @throws chrtException If param is improperly typed
 	 */
-	private function validate_type_matches($default_name, $default_value, $provided_value)
+	private function validate_type_matches($provided_value, $default_value, $default_name)
 	{
-		$default_type = gettype($default_value);
 		$provided_type = gettype($provided_value);
+		$default_type = gettype($default_value);
 
-		if ($default_type !== $provided_type)
+		if (is_numeric($provided_value) && is_numeric($default_value))
+			return true;
+
+		if ($provided_type !== $default_type)
 			throw new chrtException(
 				$default_name . ' should be ' . $default_type . '. ' . 
 				$provided_type . ' provided.'
@@ -197,9 +204,9 @@ class chrt {
 				);
 
 			$this->validate_type_matches(
-				$data_set_name . '[' . $default_param . ']',
+				$data_set[$default_param],
 				$default_type,
-				$data_set[$default_param]
+				$data_set_name . '[' . $default_param . ']'
 			);
 		}
 	}
