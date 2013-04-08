@@ -69,14 +69,26 @@ class chrt {
 	/**
 	 * Example data set used for validation
 	 * @var array
+	 *		label (string)
+	 *		color (string)
+	 *		type (string)
+	 *		points (array)
+	 *			(num)
 	 */
 	private $data_set_example = array(
 		'label' => 'string',
+		'color' => 'string',
 		'type' => 'string',
 		'points' => array(
 			1
 		)
 	);
+
+	/**
+	 * All data points for the chart
+	 * @var array
+	 */
+	private $all_data_points = array();
 
 	/**
 	 * Final chart
@@ -96,21 +108,23 @@ class chrt {
 	/**
 	 * PHP 5 Constructor
 	 * @param string Chart Name
-	 * @param array Chart data sets
-	 *		array
-	 *			array
-	 *				label (string)
-	 *				color (string)
-	 *				type (string)
-	 *				data (array)
-	 *					(mixed | int, float, double)
-	 * @param array An array of settings overrides matching type of the default setting
+	 * @param array Chart data sets matching the type data_set_example
+	 * @param array An array of settings overrides matching the type of the default setting
 	 * @return string Chart
 	 */
 	public function __construct($name, $data_sets, $settings = array())
 	{
 		$this->validate_and_update_settings($settings, $this->settings);
 		$this->validate_data_sets($data_sets);
+
+		$this->all_data_points = $this->get_all_points_points($data_sets);
+		$this->data_max = $this->get_data_max($data_sets);
+		$this->data_min = $this->get_data_min($data_sets);
+		$this->settings['guides']['interval'] = $this->get_aesthetic_guide_interval(
+			$this->data_max,
+			$this->data_min,
+			$this->settings['guides']['count']
+		);
 	}
 
 	/**
@@ -168,7 +182,7 @@ class chrt {
 
 	/**
 	 * Validates data set parameters and data set points length
-	 * @param array Data set
+	 * @param array Data sets
 	 */
 	private function validate_data_sets($data_sets)
 	{
@@ -236,5 +250,51 @@ class chrt {
 				$data_set_name . ' has ' . $data_set_points_size . ' ' .
 				'instead of ' . $data_set_points_default_size . '.'
 			);
+	}
+
+	/**
+	 * Aggregate all data points into a single array
+	 * @param array Data sets
+	 * @return array All data points
+	 */
+	private function get_all_points_points($data_sets)
+	{
+		$all_data_points = array();
+		foreach ($data_sets as $index => $data_set)
+			$all_data_points = array_merge($all_data_points, $data_set['points']);
+
+		return $all_data_points;
+	}
+
+	/**
+	 * Get maximum data point value
+	 * @param array All data points
+	 * @return int Maximum value
+	 */
+	private function get_data_max($all_data_points)
+	{
+		return max($all_data_points);
+	}
+
+	/**
+	 * Get minimum data point value
+	 * @param array All data points
+	 * @return num Minimum value
+	 */
+	private function get_data_min($all_data_points)
+	{
+		return min($all_data_points);
+	}
+
+	/**
+	 * Gets an aesthetically pleasing guide interval
+	 * @param num Data max
+	 * @param num Data min
+	 * @param num Guide count
+	 * @return num Aesthetic guide interval
+	 */
+	private function get_aesthetic_guide_interval($data_max, $data_min, $guide_count)
+	{
+		$data_range = $data_max - $data_min;
 	}
 }
