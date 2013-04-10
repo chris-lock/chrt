@@ -85,12 +85,6 @@ class chrt {
 	);
 
 	/**
-	 * All data points for the chart
-	 * @var array
-	 */
-	private $all_data_points = array();
-
-	/**
 	 * Final chart
 	 * @var string
 	 */
@@ -100,30 +94,32 @@ class chrt {
 	 * PHP 4 Constructor
 	 * See __contruct
 	 */
-	public function chrt($chart_name, $chart_data, $settings)
+	public function chrt($chart_name, $data_sets, $x_axis_labels, $settings)
 	{
-		$this->__construct($chart_name, $chart_data, $settings);
+		$this->__construct($chart_name, $data_sets, $x_axis_labels, $settings);
 	}
 
 	/**
 	 * PHP 5 Constructor
 	 * @param string Chart Name
-	 * @param array Chart data sets matching the type data_set_example
+	 * @param array Data sets matching the type data_set_example
+	 * @param array Labels for the x axis
 	 * @param array An array of settings overrides matching the type of the default setting
 	 * @return string Chart
 	 */
-	public function __construct($name, $data_sets, $settings = array())
+	public function __construct($name, $data_sets, $x_axis_labels, $settings = array())
 	{
 		$this->validate_and_update_settings($settings, $this->settings);
 		$this->validate_data_sets($data_sets);
+		$this->validate_x_axis_labels($x_axis_labels, $data_sets);
 
-		$this->all_data_points = $this->get_all_points_points($data_sets);
-		$this->data_max = $this->get_data_max($data_sets);
-		$this->data_min = $this->get_data_min($data_sets);
-		$this->settings['guides']['interval'] = $this->get_aesthetic_guide_interval(
-			$this->data_max,
-			$this->data_min,
-			$this->settings['guides']['count']
+		$all_data_points = $this->get_all_points_points($data_sets);
+		$data_max = $this->get_data_max($all_data_points);
+		$data_min = $this->get_data_min($all_data_points);
+		$this->settings['guide']['interval'] = $this->get_aesthetic_guide_interval(
+			$data_max,
+			$data_min,
+			$this->settings['guide']['count'] - 1
 		);
 	}
 
@@ -189,7 +185,7 @@ class chrt {
 		$data_set_points_default_size = count($data_sets[0]['points']);
 
 		foreach ($data_sets as $index => $data_set) {
-			$data_set_name = 'Set [' .  $index . ']';
+			$data_set_name = '$data_sets[' .  $index . ']';
 			
 			$this->validate_data_set_parameters(
 				$data_set_name,
@@ -247,7 +243,26 @@ class chrt {
 		if ($data_set_points_size !== $data_set_points_default_size)
 			throw new chrtException(
 				'Data sets size do not match. ' . 
-				$data_set_name . ' has ' . $data_set_points_size . ' ' .
+				$data_set_name . ' has ' . $data_set_points_size . ' items ' .
+				'instead of ' . $data_set_points_default_size . '.'
+			);
+	}
+
+	/**
+	 * Validates data set parameters
+	 * @param array X axis labels
+	 * @param array Data sets
+	 * @throws chrtException If x axis length does not match data sets point size
+	 */
+	private function validate_x_axis_labels($x_axis_labels, $data_sets)
+	{
+		$x_axis_labels_size = count($x_axis_labels);
+		$data_set_points_default_size = count($data_sets[0]['points']);
+
+		if ($x_axis_labels_size !== $data_set_points_default_size)
+			throw new chrtException(
+				'$x_axis_labels size do not match data set points size. ' . 
+				'$x_axis_labels has ' . $x_axis_labels_size . ' items ' .
 				'instead of ' . $data_set_points_default_size . '.'
 			);
 	}
@@ -290,11 +305,17 @@ class chrt {
 	 * Gets an aesthetically pleasing guide interval
 	 * @param num Data max
 	 * @param num Data min
-	 * @param num Guide count
+	 * @param num Guide interval count
 	 * @return num Aesthetic guide interval
 	 */
-	private function get_aesthetic_guide_interval($data_max, $data_min, $guide_count)
+	private function get_aesthetic_guide_interval($data_max, $data_min, $interval_count)
 	{
 		$data_range = $data_max - $data_min;
+		$place = floor(log10(($data_range / $interval_count)));
+		$odd_even = (cos(pi() * $place) * .5) + 1.5;
+
+		return ($place)
+			? pow(10, ($place - $odd_even)) * 5 * $odd_even 
+			: pow(10, $place);
 	}
 }
